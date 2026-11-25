@@ -60,6 +60,8 @@ kbd{font:11px var(--f-mono);color:var(--muted)}
 .wb.noside{grid-template-columns:48px 0 1fr 300px}
 .wb.nopanel{grid-template-columns:48px 264px 1fr 0}
 .wb.noside.nopanel{grid-template-columns:48px 0 1fr 0}
+.activity{grid-column:1}.sidebar{grid-column:2}.editor{grid-column:3}.panel{grid-column:4}
+.activity,.sidebar,.editor,.panel{grid-row:1}
 .wb.noside .sidebar,.wb.nopanel .panel{display:none}
 .activity{background:var(--activity);border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:space-between}
 .activity .ab-top,.activity .ab-bot{display:flex;flex-direction:column}
@@ -241,7 +243,8 @@ textarea.code{font:12px/1.5 var(--f-mono);min-height:220px;width:100%;border:1px
   .ab.on::before{left:0;right:0;top:0;bottom:auto;width:auto;height:2px}
   .sidebar,.panel{position:fixed;left:0;right:0;bottom:70px;height:46%;z-index:40;border:0;border-top:1px solid var(--border);box-shadow:var(--shadow)}
   .wb.noside .sidebar,.wb.nopanel .panel{display:none}
-  .editor{grid-row:1}
+  .editor{grid-row:1;grid-column:1}
+  .activity{grid-column:1}
   .hide-m{display:none!important}
   .grid2{grid-template-columns:1fr}
 }
@@ -1270,8 +1273,10 @@ window.addEventListener('resize',()=>fitView());
 
 
 /* ================= interfaccia stile VS Code ================= */
-const ui={view:'tools',side:window.innerWidth>=760,panel:window.innerWidth>=760};
-const isMobile=()=>window.innerWidth<760;
+const isMobile=()=>window.innerWidth>0&&window.innerWidth<760;
+const isMid=()=>window.innerWidth<1180;
+const ui={view:'tools',side:!isMobile(),panel:!isMobile()&&!isMid()};
+let lastLayout=isMobile()?'m':isMid()?'d':'w';
 const ICO={
   e:'<svg viewBox="0 0 16 16"><rect x="2" y="4" width="12" height="8" fill="none" stroke="#2f7ed8" stroke-width="1.4"/></svg>',
   r:'<svg viewBox="0 0 16 16"><path d="M1.5 8 8 3.5 14.5 8 8 12.5Z" fill="none" stroke="#c27c0e" stroke-width="1.4"/></svg>',
@@ -1469,7 +1474,10 @@ qiIn.addEventListener('keydown',ev=>{ev.stopPropagation();
   else if(ev.key==='Enter'){ev.preventDefault();const id=qiRes[qiAct];if(id)runCmd(id);}
   else if(ev.key==='Escape'){closeQi();}});
 $('#cc').addEventListener('click',ev=>{if(ev.target.closest('input'))return;openQi();});
-window.addEventListener('resize',()=>{if(isMobile()&&ui.side&&ui.panel){ui.panel=false;applyUi();}});
+window.addEventListener('resize',()=>{const L=isMobile()?'m':isMid()?'d':'w';if(L===lastLayout)return;
+  if(L==='m'){ui.side=false;ui.panel=false;}else if(L==='d'){ui.side=true;ui.panel=false;}else{ui.side=true;ui.panel=true;}
+  lastLayout=L;applyUi();requestAnimationFrame(()=>fitView());});
+if(window.ResizeObserver){let rw=0,rh=0;new ResizeObserver(en=>{const r=en[0].contentRect;if(Math.abs(r.width-rw)>40||Math.abs(r.height-rh)>40){const first=rw<50;rw=r.width;rh=r.height;if(first||!sel.size)fitView();else renderCanvas();}}).observe(stage);}
 
 /* ================= avvio ================= */
 load();
