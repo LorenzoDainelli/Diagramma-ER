@@ -86,3 +86,51 @@ Basato sulle soluzioni dei prof (esercizi Multe, Taxi, Agenzie, Corridori):
 80. Linguaggio/strumenti: idem, analisi da presentare.
 82. PWA offline installabile: sì.
 83. Dispositivi: PC con mouse, iPad/tablet con dito/penna, telefono.
+84. Browser: Chrome, Safari, Edge, Firefox (tutti).
+85. Versione desktop: più avanti.
+86. Hosting: GitHub Pages (l'utente vuole condividerla con gli amici → link pubblico, ognuno usa il proprio account Google per Drive).
+87-88. Nessun server né account propri: tutto nel browser, unico login = Google per Drive.
+89-90. Condivisione: sia inviando il PDF sia con link Drive condiviso.
+91. Collaborazione in tempo reale: no.
+93. Lingua: italiano + inglese, selezionabile in impostazioni.
+86c. App Google pubblicata gratis e aperta a tutti (solo permesso drive.file).
+94. Nome app: ER Studio.
+95. Tema: chiaro + scuro automatico (il foglio resta bianco).
+96. Aiuto: pagina legenda dei simboli.
+97. Colore principale UI: blu.
+98. Layout: menu in alto, strumenti a sinistra, proprietà a destra.
+99. Modalità semplice/avanzata con interruttore in impostazioni.
+99b. Telefono: barra strumenti in basso + pannelli a scomparsa dal fondo.
+100. Nomi duplicati: permessi ma segnalati (vedi 58).
+101. Spazi/accenti: convertiti in CamelCase.
+102. Attributi su associazioni: no (vedi 14).
+103. Tipicamente fino a 6 entità, ma possono essere di più.
+104-105. Le linee non si devono mai incrociare: evitare incroci; se inevitabile, ponticello; associazioni doppie distanziate.
+106. Chiave su associazione: non applicabile (niente attributi sulle associazioni).
+107. Molteplicità mancante: rosso nell'editor, vuota nel PDF, e avviso prima dell'export.
+108. Mockup: sì, come artefatti usabili/interattivi (come per gli altri programmi, es. "Bozze del Visore").
+109. Sviluppo: tutto insieme.
+110. Revisione: indifferente.
+111. Test automatici: sì.
+112. Scadenza: nessuna fretta.
+113. Da evitare (draw.io): troppi menu e forme, linee che si attaccano male, export PDF scomodo, lento/pesante, non pensato per i diagrammi ER.
+114. Da tenere: guide di allineamento, trascina dalla barra, scorciatoie da tastiera.
+115. Salvataggio Drive: 2 s dopo l'ultima modifica.
+116. Su Drive si salva il PDF (riapribile).
+117. Cartella Drive automatica "ER Studio".
+118. Permesso drive.file: sì.
+119. Lista "I miei diagrammi" da Drive: sì.
+120. Senza login Google l'app funziona lo stesso (default).
+121-122. Sincronizzazione offline al ritorno della rete + cronologia versioni.
+123. Client ID OAuth Google: dopo (prima l'app, Drive collegato alla fine).
+Analisi base tecnica: in chat.
+
+## Domande extra
+E1. Lettere N:M automatiche (N da un lato, M dall'altro) ma modificabili.
+E2. Nuova linea entità–rombo: chiede ogni volta continua o tratteggiata.
+E3. Copertura generalizzazione: sigla (t,e) (t,s) (p,e) (p,s).
+E4. Attributo composto: sotto-attributi in elenco puntato sotto il nome.
+E5. Schema logico (notazione PK/FK): in attesa.
+E6. Dialetto SQL: in attesa.
+E7. Triangolino verso lettura e ternarie: attivabili, di default accesi.
+E8. Linee morbide: riprendere il codice delle curve "albero" dal repo Local-AI-Frame-Classifier.
