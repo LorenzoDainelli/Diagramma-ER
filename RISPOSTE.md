@@ -134,3 +134,5 @@ E5. Schema logico (notazione PK/FK): in attesa.
 E6. Dialetto SQL: in attesa.
 E7. Triangolino verso lettura e ternarie: attivabili, di default accesi.
 E8. Linee morbide: riprendere il codice delle curve "albero" dal repo Local-AI-Frame-Classifier.
+   Codice trovato (officina/web/statici/js/albero.js): curva a S orizzontale
+   `M x1 y1 C mezzo y1, mezzo y2, x2 y2` con mezzo = (x1+x2)/2.
