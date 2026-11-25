@@ -62,3 +62,27 @@ Basato sulle soluzioni dei prof (esercizi Multe, Taxi, Agenzie, Corridori):
 51. Navigazione: zoom con rotellina/pinch, pan trascinando lo sfondo.
 52. Proprietà: pannello a destra.
 53. Scorciatoie da tastiera: sì, personalizzabili in impostazioni.
+54-55. Allinea/distribuisci selezione + pulsante "sistema tutto" (layout automatico).
+56. Bordo pagina A4 visibile: attivabile. Ad ogni modifica il programma ridimensiona tutto per stare nell'A4 (ridimensionamento automatico disattivabile in impostazioni).
+57. Diagramma troppo grande: avviso + scelta dell'utente.
+58. Avvisi (solo segnalazione, non bloccano): entità senza chiave, molteplicità mancante, nomi duplicati di entità E di associazioni, collegamenti non validi.
+60. Commenti: sia testo libero ovunque sia commenti attaccati a un elemento/linea.
+61. Più fogli nello stesso file, come le schede di Excel.
+62-64. Generare anche: schema logico, SQL CREATE TABLE, dizionario dati.
+65. Nuovo diagramma: solo foglio bianco, nessun modello.
+61b. PDF con più fogli: finestra per scegliere quali fogli esportare.
+62b. Schema logico/SQL/dizionario: si sceglie all'export cosa includere.
+66. Margini PDF: 10 mm.
+67. PDF vettoriale.
+68. Nome file PDF: chiesto ogni volta.
+69-70. Dati del diagramma incorporati nel PDF; PDF non creato dall'app → messaggio d'errore.
+71. Compatibilità con draw.io: no.
+72. Export anche in PNG, SVG e file progetto .json.
+73. Salvataggio automatico anche nel browser: sì.
+74. Apertura: pulsante, trascinamento file e lista file da Google Drive.
+75. Metadati PDF (titolo, autore, data): sì (default).
+76. Stampa diretta Ctrl+P: sì.
+77. Base tecnica: l'utente chiede un'analisi di cosa è meglio (da presentare).
+80. Linguaggio/strumenti: idem, analisi da presentare.
+82. PWA offline installabile: sì.
+83. Dispositivi: PC con mouse, iPad/tablet con dito/penna, telefono.
