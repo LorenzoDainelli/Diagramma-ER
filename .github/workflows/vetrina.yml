@@ -29,9 +29,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      - run: npm run build
+      - run: npm run build:test
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e
+      - run: npm run build
       - name: Copia nella vetrina
         env:
           TOKEN: ${{ secrets.VETRINA_TOKEN }}

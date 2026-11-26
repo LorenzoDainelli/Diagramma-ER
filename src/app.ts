@@ -7,6 +7,13 @@ const svgToPngBlob=async(...a)=>(await import('./io/export')).svgToPngBlob(...a)
 const readPdfData=async(...a)=>(await import('./io/pdfdata')).readPdfData(...a);
 function downloadBlob(blob,name){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);}
 const STORE_KEY='erstudio';
+// L'app parte solo dal sito ufficiale: una copia salvata o pubblicata altrove si ferma qui.
+// In sviluppo (npm run dev) e nella build per i test (npm run build:test) il controllo è spento.
+const SITI=['lorenzodainelli.github.io'];
+if(!import.meta.env.DEV&&!import.meta.env.VITE_ER_TEST&&!SITI.includes(location.hostname)){
+  document.body.innerHTML='<p style="font:16px system-ui,sans-serif;padding:40px;max-width:560px;line-height:1.5">ER Studio si usa solo dal sito ufficiale:<br><a href="https://lorenzodainelli.github.io/Diagramma-ER/">lorenzodainelli.github.io/Diagramma-ER</a></p>';
+  throw new Error('ER Studio: sito non autorizzato');
+}
 /* ================= costanti e stato ================= */
 const $=s=>document.querySelector(s);
 const PAGE={w:1123,h:794}, MM=PAGE.w/297, MARGIN=Math.round(10*MM), GRID=10;
