@@ -683,12 +683,10 @@ function fit(force){
   const sh=SH(),m=sh.m;const b=bbox(m);const A=paperBox(sh);
   if(!b){m.k=1;m.tx=0;m.ty=0;checkOverflow();return;}
   if(!S.autoFit&&!force){checkOverflow();return;}
-  const fits=b.x1>=A.x&&b.y1>=A.y&&b.x2<=A.x+A.w&&b.y2<=A.y+A.h;
   const oldK=m.k;
-  if(fits){m.k=1;m.tx=0;m.ty=0;}
-  else{const bw=b.x2-b.x1,bh=b.y2-b.y1;const k=Math.min(1,A.w/bw,A.h/bh);
-    if(k>=1){m.k=1;m.tx=b.x1<A.x?A.x-b.x1:b.x2>A.x+A.w?A.x+A.w-b.x2:0;m.ty=b.y1<A.y?A.y-b.y1:b.y2>A.y+A.h?A.y+A.h-b.y2:0;}
-    else{m.k=k;m.tx=A.x+(A.w-bw*k)/2-b.x1*k;m.ty=A.y+(A.h-bh*k)/2-b.y1*k;}}
+  // sempre al centro del foglio, in orizzontale e in verticale; rimpicciolito solo se non ci sta
+  {const bw=b.x2-b.x1,bh=b.y2-b.y1;const k=Math.min(1,A.w/bw,A.h/bh);
+    m.k=k;m.tx=A.x+(A.w-bw*k)/2-b.x1*k;m.ty=A.y+(A.h-bh*k)/2-b.y1*k;}
   if(m.k<oldK-0.01&&!force)toast(`Ho rimpicciolito il diagramma al ${Math.round(m.k*100)}% per farlo stare nell'A4. Puoi spegnerlo nelle Impostazioni.`);
   checkOverflow();
 }
@@ -864,7 +862,7 @@ cv.addEventListener('pointermove',ev=>{
       dx=nx-st.x;dy=ny-st.y;}
     sel.forEach(id=>{const o=get(id),st=drag.st[id];if(!o||!st)return;const k=kind(id);
       if(k==='e'||k==='r'){o.x=st.x+dx;o.y=st.y+dy;}
-      else if(k==='a'){if(!sel.has(o.owner)){o.dx=Math.round(st.x+dx);o.dy=Math.round(st.y+dy);}}
+      else if(k==='a'){if(!sel.has(o.owner)){const ow=get(o.owner);o.dx=ow?snapv(ow.x+st.x+dx)-ow.x:snapv(st.x+dx);o.dy=ow?snapv(ow.y+st.y+dy)-ow.y:snapv(st.y+dy);}}
       else if(k==='n'){if(o.anchor){if(!sel.has(o.anchor)){o.dx=st.x+dx;o.dy=st.y+dy;}}else{o.x=st.x+dx;o.y=st.y+dy;}}});
     renderCanvas();}
 });
@@ -1035,39 +1033,48 @@ function lineAngles(e,m){const A=[];
   m.isas.forEach(i=>{const g=isaGeo(i,m);if(!g)return;if(i.parent===e.id)A.push(g.down?Math.PI/2:-Math.PI/2);if(i.children.includes(e.id))A.push(g.down?-Math.PI/2:Math.PI/2);});
   return A;}
 const angDist=(a,b)=>{let d=Math.abs(a-b)%(2*Math.PI);return d>Math.PI?2*Math.PI-d:d;};
-function placeAttrs(e,list,m){ // dispone gli attributi indicati attorno all'entità, evitando linee e altri elementi
+function entSides(e,m){ // lati dell'entità da cui escono linee
+  const occ={top:0,right:0,bottom:0,left:0};const es=eSize(e);
+  const mark=(x,y)=>{const dx=x-e.x,dy=y-e.y;if(Math.abs(dx)/(es.w/2+1)>=Math.abs(dy)/(es.h/2+1))occ[dx>=0?'right':'left']++;else occ[dy>=0?'bottom':'top']++;};
+  m.links.filter(l=>l.ent===e.id).forEach(l=>{const r=get(l.rel,m);if(r)mark(r.x,r.y);});
+  m.isas.forEach(i=>{const g=isaGeo(i,m);if(!g)return;if(i.parent===e.id)occ[g.down?'bottom':'top']++;if(i.children.includes(e.id))occ[g.down?'top':'bottom']++;});
+  return occ;}
+function attrSide(e,a){const es=eSize(e);return Math.abs(a.dx)/(es.w/2+1)>=Math.abs(a.dy)/(es.h/2+1)?(a.dx>=0?'right':'left'):(a.dy>=0?'bottom':'top');}
+const SIDES=['top','right','bottom','left'];
+function placeAttrs(e,list,m){ // attributi sui lati liberi, in ordine, agganciati alla griglia
   m=m||M();if(!list.length)return;const es=eSize(e);const skip=new Set(list.map(a=>a.id));
-  const ob=sceneObstacles(m,skip);const blocked=lineAngles(e,m);
-  const placedAng=m.attrs.filter(a=>a.owner===e.id&&!skip.has(a.id)).map(a=>Math.atan2(a.dy,a.dx));
-  const order=list.slice().sort((a,b)=>({key:0,simple:1,multi:2,comp:3}[a.kind]-{key:0,simple:1,multi:2,comp:3}[b.kind]));
-  // spaziatura ideale: dividi il giro per il numero totale di elementi che escono dall'entità
-  const total=order.length+placedAng.length+blocked.length;const ideal=Math.min(Math.PI/2,2*Math.PI/Math.max(1,total));
-  order.forEach(a=>{let best=null,bs=-Infinity;
-    for(let i=0;i<72;i++){const ang=-Math.PI/2+i*Math.PI/36,ux=Math.cos(ang),uy=Math.sin(ang);
-      const bp=bRect({x:0,y:0},es,ux*1000,uy*1000);
-      for(const R of [34,52,74,100]){const P=[e.x+bp[0]+ux*R,e.y+bp[1]+uy*R];const S0=[e.x+bp[0],e.y+bp[1]];
-        let sc=0;
-        const dB=blocked.length?Math.min(...blocked.map(b=>angDist(b,ang))):Math.PI;sc+=Math.min(dB,Math.PI/3)*90;if(dB<0.35)sc-=400;
-        const dA=placedAng.length?Math.min(...placedAng.map(b=>angDist(b,ang))):Math.PI;sc+=Math.min(dA,ideal)*120;if(dA<0.2)sc-=300;
-        const box=attrLabelBox(a,P,ux,uy,es);
-        ob.boxes.forEach(b=>{if(b.id===e.id)return;const o=boxHit(box,b,6);if(o>0)sc-=250+o*.5;});
-        ob.segs.forEach(s=>{if(segBox(s.p,s.q,box))sc-=220;if(s.ent!==e.id&&segX(S0,P,s.p,s.q))sc-=300;});
-        if(a.kind==='comp'&&uy<-0.5)sc-=60; // i sotto-attributi stanno meglio sotto o ai lati
-        if(a.kind==='key'&&uy<-0.3)sc+=15;
-        sc-=(R-34)*1.6;
-        if(sc>bs){bs=sc;best={P,ang,ux,uy,box,seg:{p:S0,q:P}};}}}
-    a.dx=Math.round(best.P[0]-e.x);a.dy=Math.round(best.P[1]-e.y);a.lx=null;a.ly=null;a.man=false;
-    placedAng.push(best.ang);ob.boxes.push(best.box);ob.segs.push({p:best.seg.p,q:best.seg.q,attr:a.id});});
+  const occ=entSides(e,m);let free=SIDES.filter(s=>!occ[s]);if(!free.length)free=SIDES.slice();
+  const keep=m.attrs.filter(a=>a.owner===e.id&&!skip.has(a.id));
+  const cnt={top:0,right:0,bottom:0,left:0};keep.forEach(a=>cnt[attrSide(e,a)]++);
+  const grp={top:[],right:[],bottom:[],left:[]};keep.forEach(a=>grp[attrSide(e,a)].push(a));
+  const rank={key:0,simple:1,multi:2,comp:3};
+  list.slice().sort((a,b)=>rank[a.kind]-rank[b.kind]).forEach(a=>{
+    let best=null,bs=Infinity;free.forEach((s,i)=>{const sc=cnt[s]+(a.kind==='comp'&&(a.subs||[]).length&&s==='top'?0.6:0)+i*0.01;if(sc<bs){bs=sc;best=s;}});
+    cnt[best]++;grp[best].push(a);});
+  const ob=sceneObstacles(m,new Set(m.attrs.filter(a=>a.owner===e.id).map(a=>a.id)));
+  const lw=a=>Math.max(tw(a.name,ATTR_FS,400),...((a.kind==='comp'?a.subs:[])||[]).map(s=>tw('• '+s,11.5,400)));
+  SIDES.forEach(s=>{const g=grp[s];if(!g.length)return;const n=g.length;
+    // gli attributi già fissati restano, si ricalcolano solo quelli nuovi; se il lato è misto si ridispone tutto il lato
+    const mine=g.filter(a=>skip.has(a.id)||!a.man);
+    const vert=s==='top'||s==='bottom';
+    const sp=vert?Math.max(60,...mine.map(a=>lw(a)+16)):Math.max(30,...mine.map(a=>a.kind==='comp'?16+15*(a.subs||[]).length:30));
+    mine.forEach((a,i)=>{const t=occ[s]?(i%2?1:-1)*(Math.floor(i/2)+1)*Math.max(sp*0.7,vert?50:34):(i-(mine.length-1)/2)*sp;
+      for(let out=0;out<5;out++){const d=40+out*20;
+        let dx=vert?t:(s==='right'?es.w/2+d:-es.w/2-d),dy=vert?(s==='top'?-es.h/2-d:es.h/2+d):t;
+        dx=snapv(e.x+dx)-e.x;dy=snapv(e.y+dy)-e.y;
+        const P=[e.x+dx,e.y+dy];const L=Math.hypot(dx,dy)||1;const box=attrLabelBox(a,P,dx/L,dy/L,es);
+        const hit=ob.boxes.some(b=>b.id!==e.id&&boxHit(box,b,4)>0)||ob.segs.some(sg=>sg.ent!==e.id&&segBox(sg.p,sg.q,box));
+        a.dx=dx;a.dy=dy;a.lx=null;a.ly=null;if(skip.has(a.id))a.man=false;
+        if(!hit){ob.boxes.push(box);break;}}});});
 }
 function autoPlace(e,a){placeAttrs(e,[a]);}
 function relayoutAttrs(e,m){m=m||M();placeAttrs(e,m.attrs.filter(a=>a.owner===e.id),m);}
 // dopo uno spostamento o un nuovo collegamento: ridispone solo gli attributi automatici che ora danno fastidio
 function fixAttrs(entIds,m){m=m||M();
-  entIds.forEach(id=>{const e=get(id,m);if(!e||kind(id)!=='e')return;const es=eSize(e);const blocked=lineAngles(e,m);
+  entIds.forEach(id=>{const e=get(id,m);if(!e||kind(id)!=='e')return;const es=eSize(e);const occ=entSides(e,m);
     const mine=m.attrs.filter(a=>a.owner===e.id);if(!mine.length)return;
     const ob=sceneObstacles(m,new Set(mine.map(a=>a.id)));
-    const bad=mine.filter(a=>{if(a.man)return false;const g=attrGeo(a,m);const ang=Math.atan2(a.dy,a.dx);
-      if(blocked.some(b=>angDist(b,ang)<0.35))return true;const box=attrLabelBox(a,g.P,g.ux,g.uy,es);
+    const bad=mine.filter(a=>{if(a.man)return false;if(occ[attrSide(e,a)])return true;const g=attrGeo(a,m);const box=attrLabelBox(a,g.P,g.ux,g.uy,es);
       return ob.boxes.some(b=>b.id!==e.id&&boxHit(box,b,2)>0)||ob.segs.some(s=>s.ent!==e.id&&segBox(s.p,s.q,box));});
     if(bad.length)placeAttrs(e,bad,m);});
 }
@@ -1092,77 +1099,85 @@ function layoutBad(m){ // incroci + linee che passano sopra elementi + elementi 
   m.links.forEach(l=>{const e=get(l.ent,m),r=get(l.rel,m);if(!e||!r)return;all.forEach(o=>{if(o===e||o===r)return;if(segBox([e.x,e.y],[r.x,r.y],nodeBox(o,4)))bad+=900;});});
   for(let i=0;i<all.length;i++)for(let j=i+1;j<all.length;j++)if(boxHit(nodeBox(all[i],14),nodeBox(all[j],14),0)>0)bad+=900;
   return bad;}
-function placeRelsMid(m){
-  m.rels.forEach(r=>{const ls=m.links.filter(l=>l.rel===r.id);const es=[...new Set(ls.map(l=>l.ent))].map(id=>get(id,m)).filter(Boolean);
-    if(es.length===2&&ls.length===2){r.x=(es[0].x+es[1].x)/2;r.y=(es[0].y+es[1].y)/2;}
-    else if(es.length===1){const e=es[0];r.x=e.x+eSize(e).w/2+130;r.y=e.y;}
-    else if(es.length===3){r.x=es.reduce((s,e)=>s+e.x,0)/3;r.y=es.reduce((s,e)=>s+e.y,0)/3;}});
-  const pairs={};m.rels.forEach(r=>{const es=[...new Set(m.links.filter(l=>l.rel===r.id).map(l=>l.ent))];if(es.length!==2)return;const k=es.sort().join('|');(pairs[k]=pairs[k]||[]).push(r);});
-  Object.entries(pairs).forEach(([k,g])=>{if(g.length<2)return;const[a,b]=k.split('|').map(id=>get(id,m));const dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy)||1;
-    g.forEach((r,i)=>{const off=(i-(g.length-1)/2)*90;r.x+=-dy/L*off;r.y+=dx/L*off;});});
+function gridArrange(m,startId,dirs){ // entità e associazioni su una griglia: ogni associazione in fila tra le sue entità
+  const cell=new Map(),pos={};const K=(c,r)=>c+','+r;
+  const free=(c,r)=>!cell.has(K(c,r));const put=(id,c,r)=>{pos[id]={c,r};cell.set(K(c,r),id);};
+  const nearFree=(c,r)=>{for(let d=1;d<60;d++)for(let dr=-d;dr<=d;dr++)for(let dc=-d;dc<=d;dc++){if(Math.max(Math.abs(dc),Math.abs(dr))!==d)continue;if(free(c+dc,r+dr))return[c+dc,r+dr];}return[c+99,r];};
+  const relEnts=r=>[...new Set(m.links.filter(l=>l.rel===r).map(l=>l.ent))];
+  const entRels=e=>[...new Set(m.links.filter(l=>l.ent===e).map(l=>l.rel))];
+  const q=[];const order=[startId,...m.ents.map(e=>e.id).filter(id=>id!==startId)];
+  for(const sid of order){if(pos[sid])continue;
+    const ps=Object.values(pos);put(sid,ps.length?Math.max(...ps.map(p=>p.c))+3:0,0);q.push(sid);
+    while(q.length){const id=q.shift();const{c,r}=pos[id];
+      // generalizzazione: figli due righe sotto, la riga in mezzo resta al pettine
+      m.isas.filter(i=>i.parent===id).forEach(i=>{const kids=i.children.filter(k=>!pos[k]);const n=kids.length;if(!n)return;
+        const cols=kids.map((k,j)=>c+Math.round((j-(n-1)/2)*2));for(let x=Math.min(c,...cols);x<=Math.max(c,...cols);x++)if(free(x,r+1))cell.set(K(x,r+1),'#');
+        kids.forEach((k,j)=>{let p=[cols[j],r+2];if(!free(...p))p=nearFree(...p);put(k,...p);q.push(k);});});
+      m.isas.filter(i=>i.children.includes(id)&&!pos[i.parent]).forEach(i=>{let p=[c,r-2];if(!free(...p))p=nearFree(...p);put(i.parent,...p);q.push(i.parent);
+        i.children.filter(k=>!pos[k]).forEach(k=>{let x=null;for(let d=2;d<40&&x==null;d+=2){if(free(c+d,r))x=c+d;else if(free(c-d,r))x=c-d;}put(k,x??c+40,r);q.push(k);});
+        const xs=i.children.map(k=>pos[k].c);for(let x=Math.min(...xs);x<=Math.max(...xs);x++)if(free(x,r-1))cell.set(K(x,r-1),'#');});
+      for(const R of entRels(id)){if(pos[R])continue;const others=relEnts(R).filter(x=>x!==id);
+        if(!others.length){const d=dirs.find(([dx,dy])=>free(c+dx,r+dy));put(R,...(d?[c+d[0],r+d[1]]:nearFree(c,r)));continue;}
+        if(others.length===1){const O=others[0];
+          if(pos[O]){const p=pos[O];
+            if(p.r===r&&Math.abs(p.c-c)===2&&free((p.c+c)/2,r)){put(R,(p.c+c)/2,r);continue;}
+            if(p.c===c&&Math.abs(p.r-r)===2&&free(c,(p.r+r)/2)){put(R,c,(p.r+r)/2);continue;}
+            const mc=Math.round((p.c+c)/2),mr=Math.round((p.r+r)/2);put(R,...(free(mc,mr)?[mc,mr]:nearFree(mc,mr)));continue;}
+          let ok=false;
+          for(const[dx,dy]of dirs)if(free(c+dx,r+dy)&&free(c+2*dx,r+2*dy)){put(R,c+dx,r+dy);put(O,c+2*dx,r+2*dy);q.push(O);ok=true;break;}
+          if(!ok)for(const[dx,dy]of dirs)if(free(c+dx,r+dy)){put(R,c+dx,r+dy);let k=3;while(!free(c+k*dx,r+k*dy)&&k<30)k++;put(O,c+k*dx,r+k*dy);q.push(O);ok=true;break;}
+          if(!ok){const t=nearFree(c,r);put(R,...t);put(O,...nearFree(...t));q.push(O);}
+          continue;}
+        const need=others.filter(o=>!pos[o]).length;let rc=null;
+        const tdirs=[[0,1],[0,-1],...dirs.filter(d=>d[0]!==0)];
+        for(const[dx,dy]of tdirs){const cc=c+dx,rr=r+dy;if(!free(cc,rr))continue;const nb=[[-dy,dx],[dy,-dx],[dx,dy]].filter(([a,b])=>free(cc+a,rr+b)).length;if(nb>=need){rc=[cc,rr,dx,dy];break;}}
+        if(!rc){const t=nearFree(c,r);rc=[t[0],t[1],1,0];}
+        put(R,rc[0],rc[1]);const nbs=[[-rc[3],rc[2]],[rc[3],-rc[2]],[rc[2],rc[3]]];
+        others.forEach(O=>{if(pos[O])return;const nb=nbs.find(([a,b])=>free(rc[0]+a,rc[1]+b));put(O,...(nb?[rc[0]+nb[0],rc[1]+nb[1]]:nearFree(rc[0],rc[1])));q.push(O);});}
+    }}
+  m.rels.forEach(r=>{if(!pos[r.id])put(r.id,...nearFree(0,0));});
+  return pos;}
+function applyGrid(m,pos){
+  const ids=Object.keys(pos);const cs=ids.map(id=>pos[id].c),rs=ids.map(id=>pos[id].r);
+  const c0=Math.min(...cs),c1=Math.max(...cs),r0=Math.min(...rs),r1=Math.max(...rs);
+  const cw={},rh={};for(let c=c0;c<=c1;c++)cw[c]=40;for(let r=r0;r<=r1;r++)rh[r]=50;
+  ids.forEach(id=>{const o=get(id,m);if(!o)return;const k=kind(id);const s=k==='e'?eSize(o):rSize(o);
+    const at=k==='e'?m.attrs.filter(a=>a.owner===id):[];const lab=at.length?Math.max(...at.map(a=>tw(a.name,ATTR_FS,400))):0;
+    cw[pos[id].c]=Math.max(cw[pos[id].c],s.w+(k==='e'?60+(at.length?Math.min(140,lab+40):0):50));
+    rh[pos[id].r]=Math.max(rh[pos[id].r],s.h+(k==='e'?70+(at.length?60:0):60));});
+  const X={},Y={};let x=0;for(let c=c0;c<=c1;c++){X[c]=x+cw[c]/2;x+=cw[c];}let y=0;for(let r=r0;r<=r1;r++){Y[r]=y+rh[r]/2;y+=rh[r];}
+  ids.forEach(id=>{const o=get(id,m);if(o){o.x=snapv(X[pos[id].c]);o.y=snapv(Y[pos[id].r]);}});
+  // due associazioni tra le stesse due entità: affiancate
+  const pairs={};m.rels.forEach(r=>{const es=[...new Set(m.links.filter(l=>l.rel===r.id).map(l=>l.ent))];if(es.length===2)(pairs[es.sort().join('|')]=pairs[es.sort().join('|')]||[]).push(r);});
+  Object.entries(pairs).forEach(([k,g])=>{if(g.length<2)return;const[a,b]=k.split('|').map(id=>get(id,m));g.forEach((r,i)=>{r.x=snapv((a.x+b.x)/2);r.y=snapv((a.y+b.y)/2);const dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy)||1,off=(i-(g.length-1)/2)*90;r.x+=snapv(-dy/L*off);r.y+=snapv(dx/L*off);});});
 }
-function separate(m){ // allontana le entità che si toccano (con margine per gli attributi)
-  const pad=e=>m.attrs.some(a=>a.owner===e.id)?60:24;
-  for(let it=0;it<80;it++){let moved=false;
-    for(let i=0;i<m.ents.length;i++)for(let j=i+1;j<m.ents.length;j++){const a=m.ents[i],b=m.ents[j];
-      const A=nodeBox(a,pad(a)),B=nodeBox(b,pad(b));const ox=Math.min(A.x2,B.x2)-Math.max(A.x1,B.x1),oy=Math.min(A.y2,B.y2)-Math.max(A.y1,B.y1);
-      if(ox>0&&oy>0){moved=true;if(ox<oy){const d=(ox/2+1)*(a.x<b.x?-1:1);a.x+=d;b.x-=d;}else{const d=(oy/2+1)*(a.y<b.y?-1:1);a.y+=d;b.y-=d;}}}
-    if(!moved)break;}
-}
+function placeAllAttrs(m){const tmp=m.attrs.slice();m.attrs.length=0;tmp.forEach(a=>{a.man=false;});
+  m.ents.slice().sort((a,b)=>tmp.filter(x=>x.owner===b.id).length-tmp.filter(x=>x.owner===a.id).length).forEach(e=>{const mine=tmp.filter(a=>a.owner===e.id);mine.forEach(a=>m.attrs.push(a));placeAttrs(e,mine,m);});
+  tmp.forEach(a=>{if(!m.attrs.includes(a))m.attrs.push(a);});}
 function arrange(){
   const m=M();if(!m.ents.length)return toast('Il foglio è vuoto.');commit();
-  // nodi: entità e associazioni; raggio = ingombro con gli attributi
-  const nodes=[...m.ents,...m.rels].map(o=>{const k=kind(o.id);const s=k==='e'?eSize(o):rSize(o);
-    const at=k==='e'?m.attrs.filter(a=>a.owner===o.id):[];const lab=at.length?Math.max(...at.map(a=>tw(a.name,ATTR_FS,400)))+(at.some(a=>a.kind==='comp')?30:0):0;
-    return{o,k,r:Math.hypot(s.w,s.h)/2+(at.length?Math.min(90,30+lab*0.5+at.length*4):8),x:o.x,y:o.y};});
-  const N={};nodes.forEach(n=>N[n.o.id]=n);
-  const edges=[];m.links.forEach(l=>{if(N[l.ent]&&N[l.rel])edges.push([N[l.ent],N[l.rel],1]);});
-  const isaE=[];m.isas.forEach(i=>i.children.forEach(c=>{if(N[i.parent]&&N[c])isaE.push([N[i.parent],N[c]]);}));
-  // relazioni con la stessa coppia di entità: tienile separate
-  function sim(seed){let rnd=seed;const R=()=>{rnd=(rnd*16807)%2147483647;return rnd/2147483647;};
-    nodes.forEach((n,i)=>{if(seed===1){n.x=n.o.x;n.y=n.o.y;}else{const a=i*2.399+R()*6.28;const d=60*Math.sqrt(i+1);n.x=600+Math.cos(a)*d*1.4;n.y=400+Math.sin(a)*d;}});
-    let T=60;
-    for(let it=0;it<420;it++){
-      nodes.forEach(n=>{n.fx=0;n.fy=0;});
-      for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){const a=nodes[i],b=nodes[j];let dx=a.x-b.x,dy=a.y-b.y;let d=Math.hypot(dx,dy);if(d<0.01){dx=R()-.5;dy=R()-.5;d=1;}
-        const min=a.r+b.r+24;let f=9000/(d*d);if(d<min)f+=(min-d)*0.9;a.fx+=dx/d*f;a.fy+=dy/d*f;b.fx-=dx/d*f;b.fy-=dy/d*f;}
-      edges.forEach(([a,b])=>{const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1;const L=a.r+b.r+40;const f=(d-L)*0.06;a.fx+=dx/d*f;a.fy+=dy/d*f;b.fx-=dx/d*f;b.fy-=dy/d*f;});
-      isaE.forEach(([p,c])=>{const ty=p.y+p.r+c.r+40;c.fy+=(ty-c.y)*0.12;p.fy-=(ty-c.y)*0.04;c.fx+=(p.x-c.x)*0.01;});
-      nodes.forEach(n=>{n.fx+=(600-n.x)*0.004;n.fy+=(400-n.y)*0.008;const f=Math.hypot(n.fx,n.fy)||1;const s=Math.min(f,T);n.x+=n.fx/f*s;n.y+=n.fy/f*s;});
-      T=Math.max(1.5,T*0.985);}
-    // le associazioni binarie vanno a metà tra le due entità
-    m.rels.forEach(r=>{const ls=m.links.filter(l=>l.rel===r.id);const es=[...new Set(ls.map(l=>l.ent))].map(id=>N[id]).filter(Boolean);const n=N[r.id];
-      if(es.length===2&&ls.length===2){n.x=(es[0].x+es[1].x)/2;n.y=(es[0].y+es[1].y)/2;}});
-    const pairs={};m.rels.forEach(r=>{const es=[...new Set(m.links.filter(l=>l.rel===r.id).map(l=>l.ent))];if(es.length!==2)return;const k=es.sort().join('|');(pairs[k]=pairs[k]||[]).push(N[r.id]);});
-    Object.values(pairs).forEach(g=>{if(g.length<2)return;const [a,b]=Object.keys(pairs).find(k=>pairs[k]===g).split('|').map(id=>N[id]);
-      const dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy)||1;g.forEach((n,i)=>{const off=(i-(g.length-1)/2)*80;n.x+=-dy/L*off;n.y+=dx/L*off;});});
-    return nodes.map(n=>[n.x,n.y]);}
-  const apply=pos=>nodes.forEach((n,i)=>{n.o.x=pos[i][0];n.o.y=pos[i][1];});
-  const score=()=>{separate(m);placeRelsMid(m);let s=layoutBad(m);const xs=nodes.map(n=>n.o.x),ys=nodes.map(n=>n.o.y);const w=Math.max(...xs)-Math.min(...xs)+200,h=Math.max(...ys)-Math.min(...ys)+200;
-    s+=Math.abs(Math.log((w/h)/1.41))*120;edges.forEach(([a,b])=>s+=Math.hypot(a.o.x-b.o.x,a.o.y-b.o.y)*0.05);return s;};
+  const deg=id=>m.links.filter(l=>l.ent===id).length+m.isas.filter(i=>i.parent===id||i.children.includes(id)).length*1.5;
+  const kids=new Set(m.isas.flatMap(i=>i.children));let starts=m.ents.filter(e=>!kids.has(e.id)).sort((a,b)=>deg(b.id)-deg(a.id)).slice(0,4).map(e=>e.id);if(!starts.length)starts=[m.ents[0].id];
+  const R=[1,0],L=[-1,0],U=[0,-1],Dn=[0,1];
+  const orders=[[R,L,Dn,U],[R,Dn,L,U],[L,R,Dn,U],[Dn,R,L,U],[R,L,U,Dn],[R,U,L,Dn]];
+  const snapL=()=>({p:[...m.ents,...m.rels].map(o=>[o,o.x,o.y]),a:m.attrs.map(a=>[a,a.dx,a.dy])});
   let best=null,bs=Infinity;
-  for(let seed=1;seed<=8;seed++){const p=sim(seed*7919%2147483646||1);apply(p);const s=score();if(s<bs){bs=s;best=p;}}
-  apply(best);
-  // riduzione incroci: prova a scambiare di posto due entità
-  for(let pass=0;pass<3;pass++){let improved=false;const ents=m.ents;
-    for(let i=0;i<ents.length;i++)for(let j=i+1;j<ents.length;j++){const c0=layoutBad(m);if(!c0)break;
-      const a=ents[i],b=ents[j];[a.x,b.x]=[b.x,a.x];[a.y,b.y]=[b.y,a.y];placeRelsMid(m);
-      if(layoutBad(m)<c0)improved=true;else{[a.x,b.x]=[b.x,a.x];[a.y,b.y]=[b.y,a.y];placeRelsMid(m);}}
-    if(!improved)break;}
-  // figli della generalizzazione allineati sotto il padre
-  m.isas.forEach(i=>{const p=get(i.parent);const cs=i.children.map(c=>get(c)).filter(Boolean);if(!p||!cs.length)return;
-    cs.sort((a,b)=>a.x-b.x);const y=Math.max(...cs.map(c=>c.y));const span=cs.map(c=>Math.max(eSize(c).w+120,200));const tot=span.reduce((s,v)=>s+v,0);let x=p.x-tot/2;
-    cs.forEach((c,k)=>{c.x=x+span[k]/2;c.y=Math.max(y,p.y+190);x+=span[k];});});
-  separate(m);placeRelsMid(m);
-  [...m.ents,...m.rels].forEach(o=>{o.x=snapv(o.x);o.y=snapv(o.y);});
-  // attributi: prima tutti tolti, poi rimessi entità per entità
-  m.attrs.forEach(a=>{a.dx=0;a.dy=-99999;});
-  const tmp=m.attrs.slice();m.attrs.length=0;
-  m.ents.slice().sort((a,b)=>tmp.filter(x=>x.owner===b.id).length-tmp.filter(x=>x.owner===a.id).length).forEach(e=>{const mine=tmp.filter(a=>a.owner===e.id);mine.forEach(a=>m.attrs.push(a));placeAttrs(e,mine,m);});
-  tmp.forEach(a=>{if(!m.attrs.includes(a))m.attrs.push(a);});
+  for(const s of starts)for(const o of orders){const pos=gridArrange(m,s,o);applyGrid(m,pos);placeAllAttrs(m);
+    let bent=0;m.links.forEach(l=>{const a=pos[l.ent],b=pos[l.rel];if(a&&b&&a.c!==b.c&&a.r!==b.r)bent++;});
+    const xs=[...m.ents,...m.rels].map(o=>o.x),ys=[...m.ents,...m.rels].map(o=>o.y);const w=Math.max(...xs)-Math.min(...xs)+300,h=Math.max(...ys)-Math.min(...ys)+250;
+    let isaBad=0;m.isas.forEach(i=>{const p=pos[i.parent];const rs=i.children.map(k=>pos[k]).filter(Boolean);if(!p||!rs.length)return;if(new Set(rs.map(x=>x.r)).size>1)isaBad++;if(rs.some(x=>x.r<=p.r))isaBad++;});
+    let tern=0;m.rels.forEach(r=>{const es=[...new Set(m.links.filter(l=>l.rel===r.id).map(l=>l.ent))];if(es.length!==3||!pos[r.id])return;const q=pos[r.id];
+      const side=es.map(e=>pos[e]).filter(Boolean).map(p=>p.c===q.c?'v':p.r===q.r?'h':'x');if(!(side.filter(x=>x==='h').length===2&&side.includes('v')))tern++;});
+    const ob=sceneObstacles(m);let attrBad=0;ob.boxes.forEach(b=>{if(!b.attr)return;const a=get(b.attr,m);
+      if(ob.boxes.some(o=>o!==b&&o.id!==(a&&a.owner)&&boxHit(b,o,2)>0))attrBad++;if(ob.segs.some(sg=>sg.attr!==b.attr&&sg.ent!==(a&&a.owner)&&segBox(sg.p,sg.q,b)))attrBad++;});
+    const sc=layoutBad(m)+bent*400+isaBad*1500+attrBad*300+tern*250+Math.abs(Math.log((w/h)/1.41))*300+(w*h)/4000;
+    if(sc<bs){bs=sc;best=snapL();}}
+  best.p.forEach(([o,x,y])=>{o.x=x;o.y=y;});best.a.forEach(([a,dx,dy])=>{a.dx=dx;a.dy=dy;a.lx=null;a.ly=null;a.man=false;});
   placeNotes(m);
-  m.k=1;m.tx=0;m.ty=0;fit(true);save();render();fitView();
-  const c=layoutCrossings(m);toast(c?`Diagramma riordinato (${c} incroci rimasti: vengono disegnati con il ponticello).`:'Diagramma riordinato senza incroci.');
+  m.k=1;m.tx=0;m.ty=0;fit(true);
+  {const b=bbox(m),A=paperBox(SH());if(b){m.tx=A.x+(A.w-(b.x2-b.x1)*m.k)/2-b.x1*m.k;m.ty=A.y+(A.h-(b.y2-b.y1)*m.k)/2-b.y1*m.k;}}
+  save();render();fitView();
+  const c=layoutCrossings(m);toast(c?`Diagramma riordinato (${c} incroci rimasti: vengono disegnati con il ponticello).`:'Diagramma riordinato: linee dritte e senza incroci.');
 }
 
 /* ================= pannello proprietà ================= */
