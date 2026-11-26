@@ -88,3 +88,8 @@ test('aggiungi entità, annulla e ripeti', async ({ page }) => {
   await page.keyboard.press('Control+y');
   await expect(page.locator('#cv [data-id^="e_"]')).toHaveCount(n + 1);
 });
+
+test('nessuna installazione né cache offline', async ({ page }) => {
+  expect(await page.locator('link[rel="manifest"]').count()).toBe(0);
+  expect(await page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length)).toBe(0);
+});

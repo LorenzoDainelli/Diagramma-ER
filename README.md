@@ -29,9 +29,9 @@ Si usa dal browser, senza installare niente e senza account.
 - **Controllo degli errori**: segnala entità senza chiave, molteplicità mancanti, nomi doppi
   e associazioni incomplete, senza mai bloccarti.
 - **PDF A4 orizzontale vettoriale**: nitido in stampa, e **riapribile**: carichi il PDF
-  e torni a modificare il diagramma.
+  e torni a modificare il diagramma. I tuoi diagrammi restano salvati nel browser.
 - **Anche PNG, SVG e JSON**, più fogli nello stesso progetto.
-- **Funziona offline** e si installa come app su computer e telefono.
+- **Sempre aggiornata**: si usa online dal browser, su computer e telefono.
 - **Interfaccia in stile editor di codice**: barra comandi, scorciatoie da tastiera
   personalizzabili, pannelli ridimensionabili, menu contestuale.
 
