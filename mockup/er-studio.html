@@ -817,8 +817,8 @@ cv.addEventListener('pointerdown',ev=>{
   if(mode&&mode.link){const from=mode.link.from;mode=null;temp='';showHint();if(g){drag={type:'link2',from,tid:g.dataset.id};renderCanvas();}else{renderCanvas();}return;}
   if(g){const id=g.dataset.id;const part=t.closest('[data-part]');
     const now=performance.now();
-    if(lastTap.id===id&&now-lastTap.t<380){lastTap={id:null,t:0};drag=null;sel=new Set([id]);render();if(kind(id)==='l'){const sp=[ev.clientX,ev.clientY];openLinkPop(id,sp[0],sp[1]);}else startRename(id);return;}
-    lastTap={id,t:now};
+    if(lastTap.id===id&&now-lastTap.t<450&&Math.hypot(ev.clientX-lastTap.x,ev.clientY-lastTap.y)<10){ev.preventDefault();lastTap={id:null,t:0};sel=new Set([id]);drag={type:'rename',id};render();return;}
+    lastTap={id,t:now,x:ev.clientX,y:ev.clientY};
     if(ev.shiftKey||ev.metaKey||ev.ctrlKey){sel.has(id)?sel.delete(id):sel.add(id);}
     else if(!sel.has(id))sel=new Set([id]);
     const o=get(id);
@@ -870,6 +870,7 @@ function endPointer(ev){
     m.ents.forEach(o=>inb(o.x,o.y)&&sel.add(o.id));m.rels.forEach(o=>inb(o.x,o.y)&&sel.add(o.id));
     m.notes.forEach(o=>{const g=noteGeo(o);inb(g.x,g.y)&&sel.add(o.id);});render();return;}
   if(d.type==='link2')return linkTo(d.from,d.tid);
+  if(d.type==='rename'){if(kind(d.id)==='l')openLinkPop(d.id,ev.clientX,ev.clientY);else startRename(d.id);return;}
   if(d.type==='link'){
     if(Math.hypot(ev.clientX-d.cx,ev.clientY-d.cy)<6){mode={link:{from:d.from}};showHint();renderCanvas();return;}
     renderCanvas();const tid=hitId(ev.clientX,ev.clientY);
