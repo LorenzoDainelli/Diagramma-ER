@@ -1421,6 +1421,7 @@ document.addEventListener('keydown',ev=>{
   if(mod&&k==='a'){ev.preventDefault();const m=M();sel=new Set([...m.ents,...m.rels,...m.notes].map(o=>o.id));render();return;}
   if(k==='delete'||k==='backspace'){ev.preventDefault();return deleteSel();}
   if(k==='escape'){if(mode){mode=null;temp='';showHint();}closePop();sel.clear();render();return;}
+  if(k==='enter'&&ev.altKey&&sel.size){ev.preventDefault();return runCmd('ctx.props');}
   if(k==='enter'&&sel.size===1){ev.preventDefault();const id=[...sel][0];if(kind(id)==='l'){const g=linkGeo(get(id));const mp=multPos(g);const sp=toScreen(mp[0],mp[1]);openLinkPop(id,sp[0],sp[1]);}else startRename(id);return;}
   if(mod||ev.altKey)return;
   const tool=Object.keys(S.keys).find(x=>S.keys[x]===k);if(tool){ev.preventDefault();toolClick(tool);}
@@ -1595,7 +1596,7 @@ let ctxPt=null;
 cv.addEventListener('contextmenu',ev=>{ev.preventDefault();if(edState)endRename(true);closePop();
   const g=ev.target.closest('[data-id]');ctxPt=[ev.clientX,ev.clientY];let list;
   if(g){const id=g.dataset.id;if(!sel.has(id)){sel=new Set([id]);render();}const k=kind(id);
-    list=['edit.rename','-'];
+    list=[...(ui.panel?[]:['ctx.props']),'edit.rename','-'];
     if(k==='e'&&sel.size===1)list.push('ctx.simple','ctx.key','ctx.comp','ctx.multi','ctx.note','-');
     if(k==='l'&&sel.size===1)list.push('ctx.card','-');
     list.push('edit.copy','edit.dup','edit.delete');
@@ -1610,6 +1611,7 @@ Object.assign(CMD,{
   'ctx.key':{l:'Aggiungi chiave',c:'Inserisci',run:()=>toolClick('key')},
   'ctx.comp':{l:'Aggiungi attributo composto',c:'Inserisci',run:()=>toolClick('comp')},
   'ctx.multi':{l:'Aggiungi attributo multivalore',c:'Inserisci',run:()=>toolClick('multi')},
+  'ctx.props':{l:'Proprietà',c:'Visualizza',k:'Alt+Invio',run:()=>{setPanel(true);requestAnimationFrame(()=>{const f=$('#panel input,#panel textarea');if(f)f.focus();});}},
   'ctx.card':{l:'Molteplicità e partecipazione…',c:'Modifica',run:()=>{openLinkPop([...sel][0],ctxPt[0],ctxPt[1]);}}
 });
 ['ctx.ent','ctx.rel','ctx.note','ctx.simple','ctx.key','ctx.comp','ctx.multi','ctx.card'].forEach(k=>CMD[k].hidden=1);
