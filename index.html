@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#005fb8">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<title>ER Studio</title>
+</head>
+<body>
+
+<div id="app">
+  <header class="titlebar">
+    <div class="tl">
+      <span class="logo" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 22 22"><rect x="1" y="6" width="9" height="10" fill="none" stroke="var(--accent)" stroke-width="2"/><path d="M13 11 17 6.5 21 11 17 15.5Z" fill="var(--accent)"/><path d="M10 11h3" stroke="var(--accent)" stroke-width="2"/></svg></span>
+      <nav class="menubar" id="menubar" aria-label="Menu">
+        <button class="mb mburger ib" data-menu="all" aria-label="Menu"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 4h12M2 8h12M2 12h12"/></svg></button>
+        <button class="mb" data-menu="file">File</button><button class="mb" data-menu="edit">Modifica</button><button class="mb" data-menu="insert">Inserisci</button><button class="mb" data-menu="view">Visualizza</button><button class="mb" data-menu="help">Aiuto</button>
+      </nav>
+    </div>
+    <div class="cc" id="cc" title="Riquadro comandi (Ctrl+Maiusc+P)">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3.5 3.5"/></svg>
+      <input id="fileName" aria-label="Nome del file" value="Agenzie immobiliari">
+      <kbd>Ctrl+Maiusc+P</kbd>
+    </div>
+    <div class="tr">
+      <button class="ib" data-cmd="view.side" title="Mostra/nascondi barra laterale (Ctrl+B)" aria-label="Barra laterale"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="1.5" y="2.5" width="13" height="11" rx="1"/><path d="M5.5 2.5v11"/><path id="sideFill" d="M1.5 3.5v9a1 1 0 0 0 1 1h3v-11h-3a1 1 0 0 0-1 1z" fill="currentColor" stroke="none"/></svg></button>
+      <button class="ib" data-cmd="view.panel" title="Mostra/nascondi proprietà" aria-label="Proprietà"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="1.5" y="2.5" width="13" height="11" rx="1"/><path d="M10.5 2.5v11"/><path id="panelFill" d="M10.5 2.5h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-3z" fill="currentColor" stroke="none"/></svg></button>
+      <button class="ib" data-cmd="file.export" title="Esporta PDF (Ctrl+E)" aria-label="Esporta PDF"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 2v8M4.5 6.5 8 10l3.5-3.5M2 13.5h12"/></svg></button>
+    </div>
+  </header>
+
+  <div class="wb" id="wb">
+    <nav class="activity" aria-label="Barra attività">
+      <div class="ab-top">
+        <button class="ab" data-view="tools" title="Strumenti" aria-label="Strumenti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="8" height="6"/><path d="M17 3l4 4-4 4-4-4z"/><circle cx="7" cy="17" r="3"/><rect x="14" y="14" width="6" height="6"/></svg></button>
+        <button class="ab" data-view="outline" title="Struttura" aria-label="Struttura"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 5h6M4 5v14M4 12h4M4 19h4"/><rect x="10" y="3" width="10" height="4"/><rect x="8" y="10" width="10" height="4"/><rect x="8" y="17" width="10" height="4"/></svg></button>
+        <button class="ab" data-view="problems" title="Problemi" aria-label="Problemi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3 2.5 20h19z"/><path d="M12 10v4.5M12 17v.5"/></svg><span class="bdg" id="probBadge" hidden></span></button>
+        <button class="ab" data-view="drive" title="Google Drive" aria-label="Google Drive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3h8l6 10-4 7H6l-4-7z"/><path d="M8 3l6 10h8M2 13h12l-4 7"/></svg></button>
+      </div>
+      <div class="ab-bot">
+        <button class="ab" data-cmd="help.legend" title="Legenda dei simboli" aria-label="Legenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.6 2.6 0 1 1 3.6 2.4c-.8.4-1.1.9-1.1 1.8M12 16.5v.5"/></svg></button>
+        <button class="ab" data-cmd="file.settings" title="Impostazioni (Ctrl+,)" aria-label="Impostazioni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
+      </div>
+    </nav>
+
+    <aside class="sidebar" id="sidebar" aria-label="Barra laterale"><div class="sash" data-sash="side" title="Trascina per allargare o stringere · doppio clic: larghezza normale"></div>
+      <div class="vhead"><span id="sideTitle">Strumenti</span><button class="ib" data-cmd="view.side" aria-label="Chiudi barra laterale" title="Chiudi">×</button></div>
+      <div class="vbody">
+        <div class="view" id="view-tools">
+          <div id="palette">
+            <div class="group"><button class="ghead"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 6l4 4 4-4z"/></svg>Elementi</button><div class="gitems">
+              <button class="tool" data-tool="ent"><svg viewBox="0 0 40 26"><rect class="s" x="5" y="5" width="30" height="16"/></svg><span>Entità</span><kbd data-k="ent"></kbd></button>
+              <button class="tool" data-tool="rel"><svg viewBox="0 0 40 26"><path class="s" d="M4 13 20 3 36 13 20 23Z"/></svg><span>Associazione</span><kbd data-k="rel"></kbd></button>
+              <button class="tool" data-tool="isa"><svg viewBox="0 0 40 26"><rect class="s" x="13" y="1" width="14" height="7"/><path class="f" d="M20 8l-3.5 5h7z"/><path class="s" d="M20 13v4M8 17h24M8 17v3M32 17v3"/><rect class="s" x="2" y="20" width="12" height="5"/><rect class="s" x="26" y="20" width="12" height="5"/></svg><span>Generalizzazione</span><kbd data-k="isa"></kbd></button>
+            </div></div>
+            <div class="group"><button class="ghead"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 6l4 4 4-4z"/></svg>Attributi</button><div class="gitems">
+              <button class="tool" data-tool="simple"><svg viewBox="0 0 40 26"><path class="s" d="M4 13h22"/><circle class="s" cx="30" cy="13" r="4" fill="none"/></svg><span>Semplice</span><kbd data-k="simple"></kbd></button>
+              <button class="tool" data-tool="key"><svg viewBox="0 0 40 26"><path class="s" d="M4 13h22"/><circle class="f" cx="30" cy="13" r="4.5"/></svg><span>Chiave</span><kbd data-k="key"></kbd></button>
+              <button class="tool" data-tool="comp"><svg viewBox="0 0 40 26"><path class="s" d="M4 13h22"/><rect class="s" x="26" y="9" width="8" height="8"/></svg><span>Composto</span><kbd data-k="comp"></kbd></button>
+              <button class="tool" data-tool="multi"><svg viewBox="0 0 40 26"><path class="s" d="M4 13h22"/><path class="s" d="M12 9.5l4 3.5-4 3.5M17 9.5l4 3.5-4 3.5"/><circle class="s" cx="30" cy="13" r="4" fill="none"/></svg><span>Multivalore</span><kbd data-k="multi"></kbd></button>
+            </div></div>
+            <div class="group"><button class="ghead"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 6l4 4 4-4z"/></svg>Altro</button><div class="gitems">
+              <button class="tool" data-tool="note"><svg viewBox="0 0 40 26"><path class="s" d="M8 8h24M8 13h24M8 18h14"/></svg><span>Commento</span><kbd data-k="note"></kbd></button>
+            </div></div>
+          </div>
+          <div class="tips"><span><b>Trascina</b> un elemento sul foglio, oppure cliccalo per aggiungerlo.</span><span><b>Doppio clic</b> per rinominare. <b>Tasto destro</b> per il menu.</span><span><b>Pallino + blu</b>: trascinalo su un'altra entità, oppure cliccalo e poi clicca l'entità, per creare l'associazione.</span><span>Sposta il foglio trascinando lo sfondo; zoom con la rotellina. <b>Maiusc</b> + trascina per selezionare più elementi.</span></div>
+        </div>
+        <div class="view" id="view-outline" hidden></div>
+        <div class="view" id="view-problems" hidden></div>
+        <div class="view" id="view-drive" hidden></div>
+      </div>
+    </aside>
+
+    <main class="editor">
+      <div class="tabs" id="tabs" role="tablist" aria-label="Fogli"></div>
+      <div class="crumbs" id="crumbs"></div>
+      <div class="stage" id="stage">
+        <svg id="cv" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Foglio del diagramma ER"></svg>
+        <div id="hint" hidden></div>
+        <div id="banner" hidden></div>
+        <input id="ed" hidden aria-label="Modifica nome">
+        <div id="pop" hidden></div>
+      </div>
+    </main>
+
+    <aside class="panel" id="panelWrap" aria-label="Proprietà"><div class="sash" data-sash="panel" title="Trascina per allargare o stringere · doppio clic: larghezza normale"></div>
+      <div class="vhead"><span>Proprietà</span><button class="ib" data-cmd="view.panel" aria-label="Chiudi proprietà" title="Chiudi">×</button></div>
+      <div class="vbody" id="panel"></div>
+    </aside>
+  </div>
+
+  <footer class="statusbar" id="statusbar">
+    <div class="sl">
+      <span class="si remote hide-m" title="ER Studio"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 4 1.5 8 5 12M11 4l3.5 4L11 12"/></svg>ER Studio</span>
+      <span class="si" id="status"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8.5 6.5 12 13 4.5"/></svg><span id="statusTxt">Salvato sul dispositivo</span></span>
+      <button class="si" data-cmd="view.problems" id="probStatus" title="Problemi"></button>
+      <button class="si hide-m" data-cmd="view.drive"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M5.5 2h5l4 7-2.5 4.5h-8L1.5 9z"/></svg>Drive: da collegare</button>
+    </div>
+    <div class="sr">
+      <button class="si hide-m" data-cmd="set.lines" id="sbLines" title="Forma delle linee"></button>
+      <button class="si hide-m" data-cmd="set.mult" id="sbMult" title="Posizione della molteplicità"></button>
+      <button class="si hide-m" data-cmd="set.mode" id="sbMode" title="Modalità"></button>
+      <button class="si" data-z="-" aria-label="Riduci">−</button><button class="si" data-z="fit" id="zv" title="Adatta il foglio">100%</button><button class="si" data-z="+" aria-label="Ingrandisci">+</button>
+      <span class="si hide-m">A4 orizzontale</span>
+    </div>
+  </footer>
+</div>
+
+<div class="modal" id="modal" hidden><div class="dialog" id="dialog"></div></div>
+<div id="toast" hidden></div>
+<div class="menu" id="menu" hidden></div>
+<div class="qi" id="qi" hidden><input id="qiIn" placeholder="Digita un comando…" aria-label="Riquadro comandi"><div class="qlist" id="qiList"></div></div>
+<input type="file" id="file" accept=".pdf,.json,application/pdf,application/json" hidden>
+
+<script type="module" src="./src/main.ts"></script>
+</body>
+</html>

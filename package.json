@@ -1,0 +1,25 @@
+{
+  "name": "er-studio",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "e2e": "playwright test --trace off"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.4.0",
+    "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^5.1.2"
+  },
+  "dependencies": {
+    "jspdf": "^4.2.1",
+    "pdf-lib": "^1.17.1",
+    "svg2pdf.js": "^2.9.0"
+  }
+}
