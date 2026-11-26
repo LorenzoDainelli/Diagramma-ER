@@ -56,9 +56,9 @@ kbd{font:11px var(--f-mono);color:var(--muted)}
 .ib svg{width:16px;height:16px}
 
 /* --- banco di lavoro --- */
-.wb{display:grid;grid-template-columns:48px 264px 1fr 300px;min-height:0}
-.wb.noside{grid-template-columns:48px 0 1fr 300px}
-.wb.nopanel{grid-template-columns:48px 264px 1fr 0}
+.wb{--sideW:264px;--panelW:300px;display:grid;grid-template-columns:48px var(--sideW) 1fr var(--panelW);min-height:0}
+.wb.noside{grid-template-columns:48px 0 1fr var(--panelW)}
+.wb.nopanel{grid-template-columns:48px var(--sideW) 1fr 0}
 .wb.noside.nopanel{grid-template-columns:48px 0 1fr 0}
 .activity{grid-column:1}.sidebar{grid-column:2}.editor{grid-column:3}.panel{grid-column:4}
 .activity,.sidebar,.editor,.panel{grid-row:1}
@@ -73,6 +73,14 @@ kbd{font:11px var(--f-mono);color:var(--muted)}
 .ab .bdg{position:absolute;right:7px;bottom:8px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--accent);color:var(--accent-ink);font-size:9.5px;font-weight:700;display:grid;place-items:center}
 .sidebar,.panel{background:var(--side);display:flex;flex-direction:column;min-width:0;min-height:0}
 .sidebar{border-right:1px solid var(--border)}
+.sidebar,.panel{position:relative}
+.tool>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.sash{position:absolute;top:0;bottom:0;width:8px;z-index:10;cursor:ew-resize;touch-action:none}
+.sidebar .sash{right:-5px}.panel .sash{left:-5px}
+.sash::after{content:"";position:absolute;top:0;bottom:0;left:3px;width:2px;background:transparent;transition:background .1s .25s}
+.sash:hover::after,.sash.on::after{background:var(--accent);transition-delay:0s}
+.sash.stop::after{background:var(--warn)}
+body.sashing,body.sashing *{cursor:ew-resize!important;user-select:none}
 .panel{border-left:1px solid var(--border)}
 .vhead{height:35px;flex:0 0 35px;display:flex;align-items:center;justify-content:space-between;padding:0 8px 0 20px;font-size:11px;letter-spacing:.3px;text-transform:uppercase;color:var(--fg)}
 .vbody{overflow-y:auto;flex:1;min-height:0;padding-bottom:12px}
@@ -246,6 +254,7 @@ textarea.code{font:12px/1.5 var(--f-mono);min-height:220px;width:100%;border:1px
   .editor{grid-row:1;grid-column:1}
   .activity{grid-column:1}
   .hide-m{display:none!important}
+  .sash{display:none}
   .grid2{grid-template-columns:1fr}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
@@ -286,7 +295,7 @@ textarea.code{font:12px/1.5 var(--f-mono);min-height:220px;width:100%;border:1px
       </div>
     </nav>
 
-    <aside class="sidebar" id="sidebar" aria-label="Barra laterale">
+    <aside class="sidebar" id="sidebar" aria-label="Barra laterale"><div class="sash" data-sash="side" title="Trascina per allargare o stringere · doppio clic: larghezza normale"></div>
       <div class="vhead"><span id="sideTitle">Strumenti</span><button class="ib" data-cmd="view.side" aria-label="Chiudi barra laterale" title="Chiudi">×</button></div>
       <div class="vbody">
         <div class="view" id="view-tools">
@@ -326,7 +335,7 @@ textarea.code{font:12px/1.5 var(--f-mono);min-height:220px;width:100%;border:1px
       </div>
     </main>
 
-    <aside class="panel" id="panelWrap" aria-label="Proprietà">
+    <aside class="panel" id="panelWrap" aria-label="Proprietà"><div class="sash" data-sash="panel" title="Trascina per allargare o stringere · doppio clic: larghezza normale"></div>
       <div class="vhead"><span>Proprietà</span><button class="ib" data-cmd="view.panel" aria-label="Chiudi proprietà" title="Chiudi">×</button></div>
       <div class="vbody" id="panel"></div>
     </aside>
@@ -1625,6 +1634,25 @@ window.addEventListener('resize',()=>{const L=isMobile()?'m':isMid()?'d':'w';if(
   if(L==='m'){ui.side=false;ui.panel=false;}else if(L==='d'){ui.side=true;ui.panel=false;}else{ui.side=true;ui.panel=true;}
   lastLayout=L;applyUi();requestAnimationFrame(()=>fitView());});
 if(window.ResizeObserver){let rw=0,rh=0;new ResizeObserver(en=>{const r=en[0].contentRect;if(Math.abs(r.width-rw)>40||Math.abs(r.height-rh)>40){const first=rw<50;rw=r.width;rh=r.height;if(first||!sel.size)fitView();else renderCanvas();}}).observe(stage);}
+
+
+/* --- colonne ridimensionabili --- */
+const SASH={side:{min:200,max:520,def:264,v:'--sideW'},panel:{min:240,max:560,def:300,v:'--panelW'}};
+const colW={side:264,panel:300};
+try{const w=JSON.parse(localStorage.getItem('erstudio-cols')||'null');if(w){colW.side=+w.side||264;colW.panel=+w.panel||300;}}catch(e){}
+function setCol(k,w){const c=SASH[k];const other=k==='side'?(ui.panel?colW.panel:0):(ui.side?colW.side:0);
+  const max=Math.min(c.max,window.innerWidth-48-other-320);const v=Math.round(Math.max(c.min,Math.min(max,w)));
+  colW[k]=v;$('#wb').style.setProperty(c.v,v+'px');return v!==Math.round(w);}
+setCol('side',colW.side);setCol('panel',colW.panel);
+let sashD=null;
+document.querySelectorAll('.sash').forEach(sh=>{
+  sh.addEventListener('pointerdown',ev=>{ev.preventDefault();const k=sh.dataset.sash;sashD={k,x:ev.clientX,w:colW[k],el:sh};sh.classList.add('on');document.body.classList.add('sashing');try{sh.setPointerCapture(ev.pointerId);}catch(e){}});
+  sh.addEventListener('pointermove',ev=>{if(!sashD)return;const dx=ev.clientX-sashD.x;const stop=setCol(sashD.k,sashD.w+(sashD.k==='side'?dx:-dx));sh.classList.toggle('stop',stop);fitView();});
+  const end=()=>{if(!sashD)return;sashD=null;sh.classList.remove('on','stop');document.body.classList.remove('sashing');try{localStorage.setItem('erstudio-cols',JSON.stringify(colW));}catch(e){}};
+  sh.addEventListener('pointerup',end);sh.addEventListener('pointercancel',end);
+  sh.addEventListener('dblclick',()=>{setCol(sh.dataset.sash,SASH[sh.dataset.sash].def);try{localStorage.setItem('erstudio-cols',JSON.stringify(colW));}catch(e){}fitView();});
+});
+window.addEventListener('resize',()=>{setCol('side',colW.side);setCol('panel',colW.panel);});
 
 /* ================= avvio ================= */
 load();
