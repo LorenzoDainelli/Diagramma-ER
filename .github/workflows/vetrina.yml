@@ -1,0 +1,50 @@
+name: Pubblica nel repository vetrina
+
+# Dal repository privato (sorgente) copia nel repository pubblico (vetrina) solo:
+# l'app compilata e offuscata, README, LICENSE e immagini. Il codice sorgente non esce mai.
+#
+# Configurazione nel repository privato (Settings → Secrets and variables → Actions):
+#   - variabile VETRINA_REPO   es. LorenzoDainelli/Diagramma-ER
+#   - secret    VETRINA_TOKEN  token "fine-grained" con permesso Contents: Read and write
+#                              solo sul repository vetrina
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: vetrina
+  cancel-in-progress: true
+
+jobs:
+  pubblica:
+    if: ${{ github.event.repository.private && vars.VETRINA_REPO != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e
+      - name: Copia nella vetrina
+        env:
+          TOKEN: ${{ secrets.VETRINA_TOKEN }}
+          REPO: ${{ vars.VETRINA_REPO }}
+        run: |
+          git clone --depth 1 "https://x-access-token:${TOKEN}@github.com/${REPO}.git" vetrina
+          cd vetrina
+          git rm -rq --ignore-unmatch . || true
+          cp -r ../dist/. .
+          cp ../README.md ../LICENSE .
+          mkdir -p docs/img && cp -r ../docs/img/. docs/img/
+          touch .nojekyll
+          git add -A
+          git -c user.name="ER Studio" -c user.email="noreply@github.com" \
+            commit -qm "Pubblicazione $(date -u +%Y-%m-%d) (${GITHUB_SHA::7})" || { echo "Niente da pubblicare"; exit 0; }
+          git push origin HEAD

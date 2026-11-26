@@ -1,5 +1,8 @@
 name: Pubblica su GitHub Pages
 
+# Solo finché questo repository è pubblico. Quando diventa privato (sorgente)
+# la pubblicazione passa al repository vetrina: vedi vetrina.yml.
+
 on:
   push:
     branches: [main]
@@ -16,6 +19,7 @@ concurrency:
 
 jobs:
   build:
+    if: ${{ !github.event.repository.private }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

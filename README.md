@@ -1,30 +1,61 @@
-# ER Studio (Diagramma-ER)
+<p align="center">
+  <img src="docs/img/icon.svg" width="72" alt="">
+</p>
 
-App web per disegnare diagrammi ER in notazione Chen (molteplicità 1/N/M, linea
-continua = obbligatoria, tratteggiata = facoltativa) ed esportarli in PDF A4 orizzontale.
-Il PDF contiene, nascosti dentro, i dati del diagramma: riaprendolo con **File → Apri**
-torni a modificarlo. Le scelte di notazione e interfaccia sono in `RISPOSTE.md`.
+<h1 align="center">ER Studio</h1>
 
-## Comandi
+<p align="center">
+  Diagrammi Entità-Relazione in notazione Chen, pronti da consegnare in PDF.<br>
+  <b><a href="https://lorenzodainelli.github.io/Diagramma-ER/">Apri l'app →</a></b>
+</p>
 
-```bash
-npm install
-npm run dev      # sviluppo su http://localhost:5173
-npm test         # test unitari (Vitest)
-npm run build    # controllo tipi + build in dist/
-npm run e2e      # test nel browser (Playwright, dopo la build)
-```
+<p align="center">
+  <img src="docs/img/editor.png" alt="L'editor di ER Studio con un diagramma di esempio" width="900">
+</p>
 
-## Struttura
+## Cos'è
 
-- `index.html`, `src/style.css`: interfaccia stile VS Code.
-- `src/app.ts`: editor (disegno SVG, disposizione automatica a griglia, comandi, impostazioni).
-  Portato dal mockup, ancora da tipizzare man mano.
-- `src/io/`: formato dei dati (`data.ts`), dati nascosti nel PDF con pdf-lib (`pdfdata.ts`),
-  PDF vettoriale con jsPDF + svg2pdf e PNG (`export.ts`).
-- `tests/unit`, `tests/e2e`: test.
-- `mockup/er-studio.html`: il mockup a file singolo da cui è partita l'app.
+ER Studio è un editor per diagrammi ER che segue le convenzioni usate a scuola e
+all'università: entità, associazioni, attributi, generalizzazioni, molteplicità.
+Si usa dal browser, senza installare niente e senza account.
 
-L'app funziona offline (PWA) e salva sul dispositivo. Google Drive si collega più avanti.
-Il workflow `.github/workflows/pages.yml` pubblica su GitHub Pages a ogni push su `main`
-(serve attivare Pages con sorgente «GitHub Actions» nelle impostazioni del repository).
+## Cosa sa fare
+
+- **Notazione Chen completa**: entità, associazioni (anche ternarie e ricorsive),
+  attributi semplici, chiave, composti e multivalore, generalizzazioni con copertura (t,e) / (p,s).
+- **Partecipazione e molteplicità**: linea continua obbligatoria, tratteggiata facoltativa; 1, N, M.
+- **Disposizione automatica**: un clic e il diagramma si ordina su una griglia, con linee
+  dritte, associazioni tra le loro entità e attributi sui lati liberi.
+- **Controllo degli errori**: segnala entità senza chiave, molteplicità mancanti, nomi doppi
+  e associazioni incomplete, senza mai bloccarti.
+- **PDF A4 orizzontale vettoriale**: nitido in stampa, e **riapribile**: carichi il PDF
+  e torni a modificare il diagramma.
+- **Anche PNG, SVG e JSON**, più fogli nello stesso progetto.
+- **Funziona offline** e si installa come app su computer e telefono.
+- **Interfaccia in stile editor di codice**: barra comandi, scorciatoie da tastiera
+  personalizzabili, pannelli ridimensionabili, menu contestuale.
+
+<table>
+  <tr>
+    <td width="62%"><img src="docs/img/pdf.png" alt="Il PDF esportato"></td>
+    <td width="38%"><img src="docs/img/telefono.png" alt="ER Studio sul telefono"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Il PDF esportato, A4 orizzontale</sub></td>
+    <td align="center"><sub>Sul telefono</sub></td>
+  </tr>
+</table>
+
+## In arrivo
+
+- Salvataggio automatico su Google Drive
+- Schema logico e SQL generati dal diagramma
+- Interfaccia in inglese
+
+## Licenza
+
+ER Studio è software proprietario, **concesso in uso gratuito**: puoi usare l'app e i
+diagrammi che crei sono tuoi, ma il software non può essere copiato, modificato o
+ridistribuito. Dettagli in [LICENSE](LICENSE).
+
+© 2026 Lorenzo Dainelli
