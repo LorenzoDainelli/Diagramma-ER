@@ -383,7 +383,7 @@ const DEF_SETTINGS={
   headerFields:[{l:'Nome',v:''},{l:'Classe',v:''},{l:'Data',v:new Date().toLocaleDateString('it-IT')}],
   lang:'it', advanced:false, attrMode:'entrambi', assocMode:'trascina', camel:true,
   keys:{ent:'e',rel:'a',isa:'g',simple:'t',key:'k',comp:'c',multi:'m',note:'n'},
-  combos:{undo:'Ctrl+Z',redo:'Ctrl+Y',cut:'Ctrl+X',copy:'Ctrl+C',paste:'Ctrl+V',dup:'Ctrl+D'},
+  combos:{undo:'Ctrl+Z',redo:'Ctrl+Y',cut:'Ctrl+X',copy:'Ctrl+C',paste:'Ctrl+V',dup:'Ctrl+D',del:'Canc',ren:'Invio',esc:'Esc'},
   warnOverlay:false
 };
 let S=JSON.parse(JSON.stringify(DEF_SETTINGS));
@@ -1330,15 +1330,15 @@ function settingsDlg(){
      <button class="btn sm" data-hfadd style="margin-top:6px">+ Campo</button></div>
    <div class="set"><h4>Scorciatoie da tastiera</h4><div class="keys">${[['ent','Entità'],['rel','Associazione'],['isa','Generalizzazione'],['simple','Attributo semplice'],['key','Chiave'],['comp','Attributo composto'],['multi','Multivalore'],['note','Commento']].map(([k,t])=>`<span>${t}</span><input class="inp" maxlength="1" data-key="${k}" value="${esc(S.keys[k])}">`).join('')}</div>
      <h4 style="margin-top:12px">Comandi di modifica</h4><div class="keys">${Object.keys(COMBO_NAME).map(a=>`<span>${COMBO_NAME[a]}</span><input class="inp combo" readonly data-combo="${a}" value="${esc(S.combos[a])}" title="Clicca e premi la nuova combinazione">`).join('')}</div>
-     <p class="note" id="comboMsg" style="margin-top:6px">Clicca un campo e premi la combinazione nuova (per esempio Ctrl+Maiusc+Z). Esc per lasciarla com'è.</p>
-     <p class="note" style="margin-top:6px">Sempre attive: Canc elimina, Invio rinomina, Esc annulla.</p></div>
+     <p class="note" id="comboMsg" style="margin-top:6px">Clicca un campo e premi la combinazione nuova (per esempio Ctrl+Maiusc+Z). Esc per lasciarla com'è (per «Annulla azione» clicca fuori dal campo).</p>
+</div>
   </div><div class="dfoot"><button class="btn" data-reset>Ripristina predefiniti</button><button class="btn primary" data-close>Fatto</button></div>`);
 }
 dlg.addEventListener('keydown',ev=>{const t=ev.target;if(!t.dataset||!t.dataset.combo)return;ev.preventDefault();ev.stopPropagation();
-  if(ev.key==='Escape'&&!ev.ctrlKey&&!ev.shiftKey&&!ev.altKey){t.value=S.combos[t.dataset.combo];t.blur();return;}
+  if(ev.key==='Escape'&&!ev.ctrlKey&&!ev.shiftKey&&!ev.altKey&&t.dataset.combo!=='esc'){t.value=S.combos[t.dataset.combo];t.blur();return;}
   const cb=comboOf(ev);if(!cb)return;const msg=$('#comboMsg');
   const other=Object.keys(S.combos).find(a=>a!==t.dataset.combo&&S.combos[a]===cb);
-  const fixed=FIXED_COMBOS[cb]||(['Delete','Backspace','Enter','Escape','Tab'].includes(ev.key)&&!ev.ctrlKey&&!ev.altKey?'tasti di sistema':null);
+  const fixed=FIXED_COMBOS[cb]||null;
   const tool=!/^(Ctrl|Alt)\+/.test(cb)&&Object.keys(S.keys).find(x=>S.keys[x].toUpperCase()===cb.replace('Maiusc+',''))?'uno strumento':null;
   const clash=other?COMBO_NAME[other]:fixed||tool;
   if(clash){msg.innerHTML=`<b style="color:var(--err)">${esc(cb)} è già usato da ${esc(clash)}.</b> Scegline un'altra.`;t.value=S.combos[t.dataset.combo];return;}
@@ -1460,10 +1460,8 @@ document.addEventListener('keydown',ev=>{
   if(mod&&!ev.shiftKey){const map={',':'file.settings',o:'file.open',e:'file.export',p:'file.print',b:'view.side','0':'zoom.fit','+':'zoom.in','=':'zoom.in','-':'zoom.out'};
     if(map[k]){ev.preventDefault();return runCmd(map[k]);}}
   if(mod&&k==='a'){ev.preventDefault();const m=M();sel=new Set([...m.ents,...m.rels,...m.notes].map(o=>o.id));render();return;}
-  if(k==='delete'||k==='backspace'){ev.preventDefault();return deleteSel();}
-  if(k==='escape'){if(mode){mode=null;temp='';showHint();}closePop();sel.clear();render();return;}
+  if(k==='backspace'&&S.combos.del==='Canc'&&!mod){ev.preventDefault();return deleteSel();}
   if(k==='enter'&&ev.altKey&&sel.size){ev.preventDefault();return runCmd('ctx.props');}
-  if(k==='enter'&&sel.size===1){ev.preventDefault();const id=[...sel][0];if(kind(id)==='l'){const g=linkGeo(get(id));const mp=multPos(g);const sp=toScreen(mp[0],mp[1]);openLinkPop(id,sp[0],sp[1]);}else startRename(id);return;}
   if(mod||ev.altKey)return;
   const tool=Object.keys(S.keys).find(x=>S.keys[x]===k);if(tool){ev.preventDefault();toolClick(tool);}
 });
@@ -1566,6 +1564,8 @@ const CMD={
   'edit.dup':{l:'Duplica',c:'Modifica',k:'Ctrl+D',en:()=>sel.size>0,run:()=>{if(copySel())paste();}},
   'edit.rename':{l:'Rinomina',c:'Modifica',k:'Invio',en:()=>sel.size===1&&kind([...sel][0])!=='l'&&kind([...sel][0])!=='i',run:()=>startRename([...sel][0])},
   'edit.delete':{l:'Elimina',c:'Modifica',k:'Canc',en:()=>sel.size>0,run:()=>deleteSel()},
+  'edit.enter':{l:'Rinomina o apri la linea',c:'Modifica',hidden:1,run:()=>{if(sel.size!==1)return;const id=[...sel][0];if(kind(id)==='l'){const g=linkGeo(get(id));const mp=multPos(g);const sp=toScreen(mp[0],mp[1]);openLinkPop(id,sp[0],sp[1]);}else if(kind(id)!=='i')startRename(id);}},
+  'edit.escape':{l:'Annulla azione e deseleziona',c:'Modifica',hidden:1,run:()=>{if(mode){mode=null;temp='';showHint();}closePop();sel.clear();render();}},
   'edit.all':{l:'Seleziona tutto',c:'Modifica',k:'Ctrl+A',run:()=>{const m=M();sel=new Set([...m.ents,...m.rels,...m.notes].map(o=>o.id));render();}},
   'align.l':{l:'Allinea a sinistra',c:'Disponi',en:()=>sel.size>1,run:()=>align('l')},
   'align.cx':{l:'Allinea al centro (verticale)',c:'Disponi',en:()=>sel.size>1,run:()=>align('cx')},
@@ -1607,14 +1607,15 @@ const MENUS={
   help:['help.legend','help.keys','-','help.about']
 };
 const MTITLE={file:'File',edit:'Modifica',insert:'Inserisci',view:'Visualizza',help:'Aiuto'};
-const COMBO_CMD={undo:'edit.undo',redo:'edit.redo',cut:'edit.cut',copy:'edit.copy',paste:'edit.paste',dup:'edit.dup'};
-const COMBO_NAME={undo:'Annulla',redo:'Ripeti',cut:'Taglia',copy:'Copia',paste:'Incolla',dup:'Duplica'};
-const FIXED_COMBOS={'Ctrl+Maiusc+P':'Riquadro comandi','Ctrl+,':'Impostazioni','Ctrl+O':'Apri','Ctrl+E':'Esporta','Ctrl+P':'Stampa','Ctrl+B':'Barra laterale','Ctrl+A':'Seleziona tutto','Ctrl+0':'Adatta','Alt+Enter':'Proprietà'};
+const COMBO_CMD={undo:'edit.undo',redo:'edit.redo',cut:'edit.cut',copy:'edit.copy',paste:'edit.paste',dup:'edit.dup',del:'edit.delete',ren:'edit.enter',esc:'edit.escape'};
+const COMBO_NAME={undo:'Annulla',redo:'Ripeti',cut:'Taglia',copy:'Copia',paste:'Incolla',dup:'Duplica',del:'Elimina',ren:'Rinomina',esc:'Annulla azione / deseleziona'};
+const KEY_IT={Delete:'Canc',Enter:'Invio',Escape:'Esc',Backspace:'Backspace',Tab:'Tab',ArrowUp:'Su',ArrowDown:'Giù',ArrowLeft:'Sinistra',ArrowRight:'Destra',Insert:'Ins',Home:'Inizio',End:'Fine',PageUp:'PagSu',PageDown:'PagGiù'};
+const FIXED_COMBOS={'Ctrl+Maiusc+P':'Riquadro comandi','Ctrl+,':'Impostazioni','Ctrl+O':'Apri','Ctrl+E':'Esporta','Ctrl+P':'Stampa','Ctrl+B':'Barra laterale','Ctrl+A':'Seleziona tutto','Ctrl+0':'Adatta','Alt+Invio':'Proprietà','Tab':'tasti di sistema'};
 function comboOf(ev){if(['Control','Shift','Alt','Meta','AltGraph'].includes(ev.key))return null;const p=[];if(ev.ctrlKey||ev.metaKey)p.push('Ctrl');if(ev.altKey)p.push('Alt');if(ev.shiftKey)p.push('Maiusc');
-  let k=ev.key;if(k===' ')k='Spazio';else if(k.length===1)k=k.toUpperCase();p.push(k);return p.join('+');}
+  let k=ev.key;if(k===' ')k='Spazio';else if(k.length===1)k=k.toUpperCase();else if(KEY_IT[k])k=KEY_IT[k];p.push(k);return p.join('+');}
 function cmdOk(id){const c=CMD[id];return c&&(!c.adv||S.advanced)&&(!c.en||c.en());}
 function runCmd(id){const c=CMD[id];if(!c)return;closeMenu();closeQi();if(c.adv&&!S.advanced)return toast('Disponibile in modalità avanzata');if(c.en&&!c.en())return;c.run();}
-function toolKey(id){const c=CMD[id];const ck=Object.keys(COMBO_CMD).find(a=>COMBO_CMD[a]===id);if(ck)return S.combos[ck];if(c.tool&&S.keys[c.tool])return S.keys[c.tool].toUpperCase();return c.k||'';}
+function toolKey(id){const c=CMD[id];const ck=id==='edit.rename'?'ren':Object.keys(COMBO_CMD).find(a=>COMBO_CMD[a]===id);if(ck)return S.combos[ck];if(c.tool&&S.keys[c.tool])return S.keys[c.tool].toUpperCase();return c.k||'';}
 function menuItems(list){return list.filter(id=>id==='-'||!CMD[id].adv||S.advanced).map(id=>id==='-'?'<div class="msep"></div>':id.startsWith('#')?`<div class="mh">${esc(id.slice(1))}</div>`:
   `<button class="mi" data-cmd="${id}"${cmdOk(id)?'':' disabled'}><span></span><span>${esc(CMD[id].l)}</span><kbd>${esc(toolKey(id))}</kbd></button>`).join('').replace(/^(<div class="msep"><\/div>)+|(<div class="msep"><\/div>)+$/g,'').replace(/(<div class="msep"><\/div>){2,}/g,'<div class="msep"></div>');}
 const menu=$('#menu');let menuFor=null;
