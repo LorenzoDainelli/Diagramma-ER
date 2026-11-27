@@ -93,3 +93,10 @@ test('nessuna installazione né cache offline', async ({ page }) => {
   expect(await page.locator('link[rel="manifest"]').count()).toBe(0);
   expect(await page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length)).toBe(0);
 });
+
+test('«Sistema tutto» dal tasto destro anche in modalità semplice', async ({ page }) => {
+  await page.click('#cv', { button: 'right', position: { x: 20, y: 20 } });
+  await expect(page.locator('#menu [data-cmd="edit.arrange"]')).toBeVisible();
+  await page.click('#menu [data-cmd="edit.arrange"]');
+  await expect(page.locator('#menu')).toBeHidden();
+});

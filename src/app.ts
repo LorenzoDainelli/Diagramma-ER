@@ -968,7 +968,7 @@ function settingsDlg(){
     <div class="set"><h4>Simboli</h4>${c('triangle','Triangolino del verso di lettura','Dentro il rombo, punta verso l\'oggetto del verbo')}${c('ternary','Associazioni ternarie','Un rombo collegato a tre entità')}</div>
     <div class="set"><h4>Foglio A4</h4>${c('showPage','Mostra il bordo del foglio A4')}${c('autoFit','Adatta da solo al foglio','A ogni modifica rimpicciolisce il diagramma se esce dall\'A4')}</div>
     <div class="set"><h4>Nomi</h4>${c('camel','Converti in CamelCase','«data di nascita» diventa DataNascita, «Città» diventa Citta')}</div>
-    <div class="set"><h4>Interfaccia</h4>${c('advanced','Modalità avanzata','Mostra Sistema tutto, Allinea e Distribuisci')}${c('warnOverlay','Avvisi sopra gli elementi','Un fumetto con il problema sopra l\'entità, l\'associazione o la linea. Non finisce nel PDF')}
+    <div class="set"><h4>Interfaccia</h4>${c('advanced','Modalità avanzata','Mostra Allinea e Distribuisci')}${c('warnOverlay','Avvisi sopra gli elementi','Un fumetto con il problema sopra l\'entità, l\'associazione o la linea. Non finisce nel PDF')}
       <label class="fld"><span>Lingua</span><select data-sel="lang"><option value="it"${S.lang==='it'?' selected':''}>Italiano</option><option value="en"${S.lang==='en'?' selected':''}>English (in arrivo)</option></select></label></div>
    </div>
    <div class="set"><h4>Intestazione sul foglio</h4>${c('header','Mostra l\'intestazione in alto a destra')}
@@ -1236,7 +1236,7 @@ const CMD={
   'align.b':{l:'Allinea in basso',c:'Disponi',en:()=>sel.size>1,run:()=>align('b')},
   'align.dh':{l:'Distribuisci in orizzontale',c:'Disponi',en:()=>sel.size>2,run:()=>align('dh')},
   'align.dv':{l:'Distribuisci in verticale',c:'Disponi',en:()=>sel.size>2,run:()=>align('dv')},
-  'edit.arrange':{l:'Sistema tutto (disposizione automatica)',c:'Disponi',adv:1,run:()=>arrange()},
+  'edit.arrange':{l:'Sistema tutto (disposizione automatica)',c:'Disponi',run:()=>arrange()},
   'ins.ent':{l:'Entità',c:'Inserisci',tool:'ent'},'ins.rel':{l:'Associazione',c:'Inserisci',tool:'rel'},'ins.isa':{l:'Generalizzazione',c:'Inserisci',tool:'isa'},
   'ins.simple':{l:'Attributo semplice',c:'Inserisci',tool:'simple'},'ins.key':{l:'Attributo chiave',c:'Inserisci',tool:'key'},'ins.comp':{l:'Attributo composto',c:'Inserisci',tool:'comp'},'ins.multi':{l:'Attributo multivalore',c:'Inserisci',tool:'multi'},
   'ins.note':{l:'Commento',c:'Inserisci',tool:'note'},
