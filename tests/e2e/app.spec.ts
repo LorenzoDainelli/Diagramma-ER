@@ -9,6 +9,13 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
+  // si parte da un foglio vuoto
+  await expect(page.locator('#cv [data-id^="e_"]')).toHaveCount(0);
+  await expect(page.locator('#fileName')).toHaveValue('Nuovo diagramma');
+  // per i test serve l'esempio
+  await page.click('[data-menu="help"]');
+  await page.click('#menu [data-cmd="help.sample"]');
+  await page.click('#sampleGo');
   await expect(page.locator('#cv [data-id^="e_"]').first()).toBeVisible();
 });
 test.afterEach(() => expect(errors).toEqual([]));

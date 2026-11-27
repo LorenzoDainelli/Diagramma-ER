@@ -81,7 +81,7 @@ function save(){
 function load(){
   try{const d=JSON.parse(localStorage.getItem(STORE_KEY)||'null');
     if(d&&d.doc&&d.doc.sheets){doc=d.doc;S=Object.assign(JSON.parse(JSON.stringify(DEF_SETTINGS)),d.S||{});S.keys=Object.assign({},DEF_SETTINGS.keys,(d.S||{}).keys||{});S.combos=Object.assign({},DEF_SETTINGS.combos,(d.S||{}).combos||{});return;}}catch(e){}
-  doc=newDoc(true);
+  doc=newDoc(false);
 }
 
 /* ================= modello: accesso ================= */
@@ -1084,6 +1084,12 @@ function driveDlg(){
    <p class="note">Salvataggio automatico 2 secondi dopo l'ultima modifica, nella cartella «ER Studio». Offline salva sul dispositivo e sincronizza quando torna la rete. Drive tiene anche la cronologia delle versioni.</p></div>
    <div class="dfoot"><button class="btn" disabled>Collega Google Drive</button><button class="btn primary" data-close>Chiudi</button></div>`);
 }
+function sampleDlg(){
+  openModal(`<div class="dhead"><h2>Apri l'esempio</h2><button class="xbtn" data-close aria-label="Chiudi">×</button></div>
+   <div class="dbody"><p>Apre il diagramma di esempio «Agenzie immobiliari» al posto di quello attuale. Se vuoi tenere quello attuale, esportalo prima in PDF o .json.</p></div>
+   <div class="dfoot"><button class="btn" data-close>Annulla</button><button class="btn primary" id="sampleGo">Apri l'esempio</button></div>`);
+  $('#sampleGo').onclick=()=>{closeModal();loadDoc(newDoc(true),'Esempio aperto.');};
+}
 function newDlg(){
   openModal(`<div class="dhead"><h2>Nuovo diagramma</h2><button class="xbtn" data-close aria-label="Chiudi">×</button></div>
    <div class="dbody"><p>Inizi da un foglio bianco. Il diagramma attuale viene sostituito: se vuoi tenerlo, esportalo prima in PDF o .json.</p></div>
@@ -1256,6 +1262,7 @@ const CMD={
   'set.mode':{l:'Passa a modalità semplice/avanzata',c:'Impostazioni',run:()=>{S.advanced=!S.advanced;applySettings();toast('Modalità '+(S.advanced?'avanzata':'semplice'));}},
   'help.legend':{l:'Legenda dei simboli',c:'Aiuto',run:()=>legendDlg()},
   'help.keys':{l:'Scorciatoie da tastiera',c:'Aiuto',run:()=>settingsDlg()},
+  'help.sample':{l:'Apri l\'esempio',c:'Aiuto',run:()=>sampleDlg()},
   'help.about':{l:'Informazioni su ER Studio',c:'Aiuto',run:()=>toast('ER Studio · diagrammi ER in notazione Chen, PDF A4 riapribile. Versione '+__APP_VERSION__+'.')},
   'cmd.palette':{l:'Riquadro comandi',c:'Visualizza',k:'Ctrl+Maiusc+P',run:()=>openQi()}
 };
@@ -1265,7 +1272,7 @@ const MENUS={
   edit:['edit.undo','edit.redo','-','edit.cut','edit.copy','edit.paste','edit.dup','edit.rename','edit.delete','-','edit.all','-','align.l','align.cx','align.r','align.t','align.cy','align.b','align.dh','align.dv','-','edit.arrange'],
   insert:['ins.ent','ins.rel','ins.isa','-','ins.simple','ins.key','ins.comp','ins.multi','-','ins.note','-','sheet.new'],
   view:['cmd.palette','-','view.tools','view.outline','view.problems','view.drive','-','view.side','view.panel','-','zoom.in','zoom.out','zoom.fit','-','set.lines','set.mult','set.mode','set.warnov'],
-  help:['help.legend','help.keys','-','help.about']
+  help:['help.legend','help.keys','help.sample','-','help.about']
 };
 const MTITLE={file:'File',edit:'Modifica',insert:'Inserisci',view:'Visualizza',help:'Aiuto'};
 const COMBO_CMD={undo:'edit.undo',redo:'edit.redo',cut:'edit.cut',copy:'edit.copy',paste:'edit.paste',dup:'edit.dup',del:'edit.delete',ren:'edit.enter',esc:'edit.escape'};
